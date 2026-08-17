@@ -1,0 +1,70 @@
+<div class="logs-viewer-container card">
+  <!-- Terminal Top Toolbar -->
+  <div class="terminal-toolbar">
+    <div class="toolbar-left">
+      <span class="status-indicator" [class.active]="state.serverStatus().running"></span>
+      <h4>Llama Server Live Stream</h4>
+      <span class="log-count font-mono">{{ state.logs().length }} lines</span>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="toolbar-center">
+      <div class="search-input-wrapper">
+        <input type="text" class="form-control font-mono search-input" placeholder="Search logs..." [(ngModel)]="searchQuery" />
+        @if (searchQuery()) {
+          <button class="clear-search" (click)="searchQuery.set('')">&times;</button>
+        }
+      </div>
+
+      <div class="level-filters">
+        <button class="level-btn" [class.active]="selectedLevel() === 'ALL'" (click)="selectedLevel.set('ALL')">ALL</button>
+        <button class="level-btn level-info" [class.active]="selectedLevel() === 'INFO'" (click)="selectedLevel.set('INFO')">INFO</button>
+        <button class="level-btn level-warn" [class.active]="selectedLevel() === 'WARN'" (click)="selectedLevel.set('WARN')">WARN</button>
+        <button class="level-btn level-error" [class.active]="selectedLevel() === 'ERROR'" (click)="selectedLevel.set('ERROR')">ERROR</button>
+        <button class="level-btn level-slot" [class.active]="selectedLevel() === 'SLOT'" (click)="selectedLevel.set('SLOT')">SLOT</button>
+        <button class="level-btn level-sys" [class.active]="selectedLevel() === 'SYSTEM'" (click)="selectedLevel.set('SYSTEM')">SYS</button>
+      </div>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="toolbar-right">
+      <label class="autoscroll-toggle">
+        <input type="checkbox" [(ngModel)]="autoScroll" />
+        <span>Auto-Scroll</span>
+      </label>
+
+      <button class="btn btn-secondary btn-sm" (click)="copyAllLogs()">
+        {{ copied() ? 'Copied' : 'Copy' }}
+      </button>
+
+      <button class="btn btn-secondary btn-sm" (click)="downloadLogs()">
+        Export .txt
+      </button>
+
+      <button class="btn btn-outline btn-sm" (click)="state.clearLogs()">
+        Clear
+      </button>
+    </div>
+  </div>
+
+  <!-- Terminal Output Screen -->
+  <div class="terminal-screen" #terminalContainer>
+    @if (filteredLogs().length === 0) {
+      <div class="empty-terminal">
+        @if (state.logs().length === 0) {
+          <p>Terminal ready. Logs from <code>llama-server.exe</code> will stream here when the server is running.</p>
+        } @else {
+          <p>No logs match the current search or level filter.</p>
+        }
+      </div>
+    } @else {
+      @for (log of filteredLogs(); track log.id) {
+        <div class="log-line log-{{ log.level.toLowerCase() }}">
+          <span class="log-time font-mono">{{ log.timestamp }}</span>
+          <span class="log-level-badge font-mono">{{ log.level }}</span>
+          <span class="log-msg font-mono">{{ log.message }}</span>
+        </div>
+      }
+    }
+  </div>
+</div>

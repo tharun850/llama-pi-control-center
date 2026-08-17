@@ -1,0 +1,1152 @@
+<div class="llama-config-container">
+  <!-- Top Command Preview & Global Actions -->
+  <div class="command-preview-card card">
+    <div class="preview-header">
+      <div class="preview-title">
+        <span class="terminal-icon">❯_</span>
+        <h3>Real-time Generated CLI Command</h3>
+        <span class="tooltip-trigger">
+          ⓘ
+          <span class="tooltip-popover">
+            Live preview of the command line arguments assembled for llama-server.exe based on your configuration below.
+          </span>
+        </span>
+      </div>
+      <div class="preview-actions">
+        <button class="btn btn-secondary btn-sm" (click)="copyCommand()" title="Copy entire command to clipboard">
+          {{ copied() ? 'Copied to Clipboard' : 'Copy Command' }}
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="saveConfig()" title="Persist configuration to llama_config.json">
+          Save Configuration
+        </button>
+      </div>
+    </div>
+    <div class="command-box font-mono">
+      <code>{{ state.generatedCommand() }}</code>
+    </div>
+  </div>
+
+  <!-- Main Config Tabs & Panels -->
+  <div class="config-layout" (input)="onConfigInput()" (change)="onConfigInput()">
+    <!-- Category Sidebar Tabs -->
+    <div class="subtabs-sidebar">
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'general'" (click)="activeSubTab.set('general')">
+        <div class="tab-info">
+          <span class="tab-name">General &amp; Models</span>
+          <span class="tab-desc">Executable &amp; Model paths, HF, Docker</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'hardware'" (click)="activeSubTab.set('hardware')">
+        <div class="tab-info">
+          <span class="tab-name">Hardware &amp; GPU Offload</span>
+          <span class="tab-desc">Layers, Split mode, Main GPU, MoE</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'context'" (click)="activeSubTab.set('context')">
+        <div class="tab-info">
+          <span class="tab-name">Context &amp; Compute</span>
+          <span class="tab-desc">Context size, Batches, Threads, Affinity</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'network'" (click)="activeSubTab.set('network')">
+        <div class="tab-info">
+          <span class="tab-name">Server &amp; Networking</span>
+          <span class="tab-desc">Host, Port, Timeouts, CORS, SSL, Auth</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'kvcache'" (click)="activeSubTab.set('kvcache')">
+        <div class="tab-info">
+          <span class="tab-name">Performance &amp; KV Cache</span>
+          <span class="tab-desc">Flash Attn, Slots, Type K/V, Prompt cache</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'reasoning'" (click)="activeSubTab.set('reasoning')">
+        <div class="tab-info">
+          <span class="tab-name">Reasoning &amp; Templates</span>
+          <span class="tab-desc">Thinking mode, Jinja chat templates</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'sampling'" (click)="activeSubTab.set('sampling')">
+        <div class="tab-info">
+          <span class="tab-name">Sampling Defaults</span>
+          <span class="tab-desc">Temp, Top-K/P, Min-P, DRY, Penalties</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'speculative'" (click)="activeSubTab.set('speculative')">
+        <div class="tab-info">
+          <span class="tab-name">Speculative &amp; Vision</span>
+          <span class="tab-desc">Draft models, Ngram, Multimodal mmproj</span>
+        </div>
+      </button>
+
+      <button class="subtab-btn" [class.active]="activeSubTab() === 'tools'" (click)="activeSubTab.set('tools')">
+        <div class="tab-info">
+          <span class="tab-name">Tools, MCP &amp; Raw CLI</span>
+          <span class="tab-desc">Agent tools, MCP servers, Custom args</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- Active Form Panel -->
+    <div class="config-content card">
+      <!-- TAB 1: General & Models -->
+      @if (activeSubTab() === 'general') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>General Configuration &amp; Model Paths</h4>
+            <button class="btn btn-outline btn-sm" (click)="rescanFiles()" title="Scan C:\AI\Models and C:\AI for new .gguf models">Rescan Models</button>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>
+                <span class="label-title">
+                  <span>Llama Server Executable Path</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Absolute path to the llama-server.exe binary compiled for your GPU/CPU (e.g. CUDA, Vulkan, or AVX2).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">llama-server.exe</span>
+              </label>
+              <div class="input-with-button">
+                <input type="text" class="form-control font-mono" [(ngModel)]="state.config().paths.exe_path" placeholder="C:\AI\llama.cpp\llama-server.exe" />
+                <button class="btn btn-secondary btn-sm" (click)="showExePicker.set(!showExePicker())" title="Browse detected executables">Browse Detect</button>
+              </div>
+              @if (showExePicker() && state.scannedExecutables().length > 0) {
+                <div class="quick-picker-dropdown">
+                  <div class="dropdown-header">Found Executables:</div>
+                  @for (exe of state.scannedExecutables(); track exe.path) {
+                    <div class="dropdown-item" (click)="selectExe(exe)" [title]="exe.path">
+                      <span class="item-name">{{ exe.name }}</span>
+                      <span class="item-path">{{ exe.path }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="form-group full-width">
+              <label>
+                <span class="label-title">
+                  <span>Primary Model GGUF Path</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Path to the quantized .gguf model weights file to load into memory and GPU.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-m, --model</span>
+              </label>
+              <div class="input-with-button">
+                <input type="text" class="form-control font-mono" [(ngModel)]="state.config().paths.model_path" placeholder="C:\AI\Models\your-model.gguf" />
+                <button class="btn btn-secondary btn-sm" (click)="showModelPicker.set(!showModelPicker())" title="Pick from discovered GGUF models">📦 Select GGUF</button>
+              </div>
+              @if (showModelPicker() && state.scannedModels().length > 0) {
+                <div class="quick-picker-dropdown">
+                  <div class="dropdown-header">Discovered Models in C:\AI\Models:</div>
+                  @for (m of state.scannedModels(); track m.path) {
+                    <div class="dropdown-item" (click)="selectModel(m)" [title]="'Click to select: ' + m.path">
+                      <div class="item-main">
+                        <span class="item-name font-mono">{{ m.name }}</span>
+                        <span class="item-size badge badge-stopped">{{ m.sizeFormatted }}</span>
+                      </div>
+                      <span class="item-path">{{ m.path }}</span>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Model Alias</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      The public model name used by OpenAI-compatible API clients, OpenCode, and IDE extensions (e.g. qwen-fable, llama-3.2).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-a, --alias</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().server.alias" placeholder="qwen-fable" />
+              <div class="help-text">Model identifier exposed in /v1/chat/completions and used by OpenCode.</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Informational Tags</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Comma-separated informational metadata tags (e.g. coding, 32k, reasoning).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--tags</span>
+              </label>
+              <input type="text" class="form-control" [(ngModel)]="state.config().server.tags" placeholder="coder, reasoning, 32k" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Hugging Face Repo</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Download model on-the-fly directly from Hugging Face (format: user/repo[:quant]).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-hf, --hf-repo</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().paths.hf_repo" placeholder="ggml-org/GLM-4.7-Flash-GGUF:Q4_K_M" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Hugging Face File</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Specific GGUF filename within the Hugging Face repo if multiple files exist.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-hff, --hf-file</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().paths.hf_file" placeholder="model.gguf" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Hugging Face Token</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Access token for downloading gated models (e.g. Llama 3 official gated repo).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-hft, --hf-token</span>
+              </label>
+              <input type="password" class="form-control" [(ngModel)]="state.config().paths.hf_token" placeholder="hf_..." />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Model Download URL</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Direct HTTP/HTTPS URL from which llama-server will download weights.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-mu, --model-url</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().paths.model_url" placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 2: Hardware & GPU Offloading -->
+      @if (activeSubTab() === 'hardware') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>Hardware Acceleration & GPU Offloading</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>GPU Layers to Offload</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Number of model layers placed in VRAM. Set '999' or 'all' for 100% GPU offload, 'auto' for automatic VRAM fitting, or 0 for CPU-only.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-ngl, --n-gpu-layers</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().server.gpu_layers" placeholder="999, auto, or number" />
+              <div class="help-text">Set 999 or all for full GPU offload, auto for smart fit, or 24-32 for partial VRAM offload.</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Main GPU Index</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Index of the primary GPU used for intermediate scratch computations and KV cache. (0 is default).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-mg, --main-gpu</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.main_gpu" min="0" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Multi-GPU Split Mode</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Defines how layers and weights are partitioned across multiple installed GPUs.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-sm, --split-mode</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.split_mode">
+                <option value="auto" title="Default multi-GPU partitioning (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option value="layer" title="Pipelined execution: splits model layers across GPUs (Recommended)">layer — Split Layers & KV Across GPUs (Pipelined)</option>
+                <option value="row" title="Tensor row parallelism across multiple GPUs">row — Split Weight Rows Across GPUs (Parallelized)</option>
+                <option value="tensor" title="Experimental tensor-level parallelization">tensor — Tensor & KV Parallelized (Experimental)</option>
+                <option value="none" title="Single GPU only without multi-GPU splitting">none — Single GPU Only</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Model Load Mode</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Controls OS memory mapping and page locking. mmap offers instant startup; mlock locks weights into RAM to prevent disk swapping.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-lm, --load-mode</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.load_mode">
+                <option value="auto" title="Default: uses memory-mapping (mmap) when supported (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option value="mmap" title="Memory map model file for near-instant boot time">mmap — Memory Mapped File</option>
+                <option value="mlock" title="Forces OS to pin model in physical RAM (prevents disk paging)">mlock — Lock Model in Physical RAM</option>
+                <option value="mmap+mlock" title="Combines memory mapping with RAM locking">mmap + mlock — MMap with RAM Lock</option>
+                <option value="dio" title="Bypasses OS file buffer cache">dio — Direct I/O</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Auto-Fit Memory Margin</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Automatically adjusts unset parameters to fit comfortably inside available device VRAM with safety margin.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-fit, --fit</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.fit">
+                <option value="auto" title="Default: let llama.cpp decide automatically (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option [ngValue]="true" title="Auto-adjust unset options to prevent Out-Of-Memory (OOM) crashes">Enabled — Auto-fit device memory (--fit)</option>
+                <option [ngValue]="false" title="Strict manual allocation without automatic adjustments">Disabled — Strict manual bounds (--no-fit)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>KV Cache GPU Offload</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Keep attention key/value cache directly in GPU VRAM for maximum inference speed.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-kvo, --kv-offload</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.kv_offload">
+                <option value="auto" title="Default: keep in GPU if supported (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option [ngValue]="true" title="Fastest generation speed: keeps KV cache in GPU memory">Enabled — Keep KV cache on GPU</option>
+                <option [ngValue]="false" title="Stores KV cache in system RAM to save GPU VRAM">Disabled — CPU KV cache (--no-kv-offload)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 3: Context & Compute -->
+      @if (activeSubTab() === 'context') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>Context Size & Compute Configuration</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Context Size (Tokens)</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Total token context window allocated for prompt history and generation (e.g. 8192, 16384, 32768, 65536).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-c, --ctx-size</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.context_size" step="1024" />
+              <div class="help-text">8192 (Fast), 16384 (Coding), 32768 (OpenCode recommended), 65536+. 0 = loaded from model.</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Max Output Tokens to Predict</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Maximum number of tokens the model is allowed to generate per response turn (-1 for unrestricted).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-n, --predict</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.max_tokens" />
+              <div class="help-text">Maximum tokens generated per request (default: 2048, -1 for infinite).</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Logical Batch Size</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Maximum number of prompt tokens processed together in parallel during prompt ingestion.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-b, --batch-size</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.batch_size" step="512" />
+              <div class="help-text">Default: 2048. Higher values speed up long prompt ingestion if VRAM permits.</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Physical UBatch Size</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Physical micro-batch chunk size for memory allocation and hardware execution (default: 512).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-ub, --ubatch-size</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.ubatch_size" step="128" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Generation CPU Threads</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Number of CPU worker threads used during token generation. 0 enables auto-detection.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-t, --threads</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.threads" min="0" />
+              <div class="help-text">0 = auto-detect CPU cores.</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Batch Processing Threads</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Number of CPU threads during prompt prefill and evaluation (0 = matches generation threads).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-tb, --threads-batch</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.threads_batch" min="0" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 4: Server & Networking -->
+      @if (activeSubTab() === 'network') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>Server & Networking Endpoints</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Bind Host / IP Address</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      IP address to listen on. 127.0.0.1 limits connections to local machine; 0.0.0.0 binds to all network interfaces.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--host</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().server.host" placeholder="127.0.0.1" />
+              <div class="help-text">Use 127.0.0.1 for local only, or 0.0.0.0 to expose on network.</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Listen Port</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      TCP port to serve HTTP requests (default: 9090 or 8080).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--port</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.port" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Read/Write Timeout (Seconds)</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Maximum request duration in seconds before timing out (default: 3600).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-to, --timeout</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.timeout" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>SSE Keep-Alive Ping Interval</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Interval in seconds to send keep-alive pings during streaming responses (-1 to disable).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--sse-ping-interval</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.sse_ping_interval" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>CORS Allowed Origins</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Allowed origins for Cross-Origin Resource Sharing. Use '*' for all or 'localhost'.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--cors-origins</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().server.cors_origins" placeholder="*" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Embedded Web UI</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Enables llama.cpp's built-in static web interface served at the root URL.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--ui, --no-ui</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.webui">
+                <option [ngValue]="true" title="Serves the default llama.cpp browser chat UI">Enabled — Serve built-in llama.cpp web UI</option>
+                <option [ngValue]="false" title="Disables web UI, serves API endpoints only">Disabled — API Endpoints only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 5: Performance & KV Cache -->
+      @if (activeSubTab() === 'kvcache') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>Performance Optimizations & KV Cache</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Flash Attention</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Memory-efficient, tiled attention algorithm. Drastically reduces VRAM footprint during long context queries and accelerates computation.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-fa, --flash-attn</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.flash_attention">
+                <option value="auto" title="Default: auto-detect GPU support (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option value="on" title="Force Flash Attention: dramatically reduces VRAM usage and speeds up long context evaluation">On — Force Flash Attention (--flash-attn on)</option>
+                <option value="off" title="Disable Flash Attention (uses standard matrix attention)">Off — Disable Flash Attention (--flash-attn off)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Continuous Dynamic Batching</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Allows new requests to be dynamically inserted into ongoing generation batches without waiting for previous requests to finish.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-cb, --cont-batching</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.continuous_batching">
+                <option value="auto" title="Default: let llama.cpp decide (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option [ngValue]="true" title="Recommended: batches concurrent agent requests smoothly without stalls">Enabled — Dynamic continuous batching (--cont-batching)</option>
+                <option [ngValue]="false" title="Sequential request execution">Disabled — Sequential (--no-cont-batching)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Parallel Slots (Concurrency)</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Number of independent server slots allocated for serving concurrent user / OpenCode requests simultaneously.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-np, --parallel</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.parallel_slots" min="1" />
+              <div class="help-text">Number of parallel slots for handling concurrent requests (e.g. 2, 4, 8).</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Slot Prompt Similarity</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Minimum prompt prefix similarity required to reuse an existing slot's KV cache (0.0 to 1.0, default 0.10).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-sps, --slot-prompt-similarity</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.slot_prompt_similarity" step="0.05" min="0" max="1" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>KV Cache Data Type (K)</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Quantization precision for Key tensors in the attention KV cache. q8_0 cuts memory by 50%; q4_0 cuts by 75%.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-ctk, --cache-type-k</span>
+              </label>
+              <select class="form-control font-mono" [(ngModel)]="state.config().server.cache_type_k">
+                <option value="auto" title="Default f16 (Omit from CLI)">Auto / Default f16 (Omit from CLI)</option>
+                <option value="q8_0" title="8-bit quantization: Saves 50% KV cache VRAM with zero loss in output quality">q8_0 — 8-bit Quantized (Save 50% VRAM)</option>
+                <option value="q4_0" title="4-bit quantization: Saves 75% KV cache VRAM for huge 32k-64k contexts">q4_0 — 4-bit Quantized (Save 75% VRAM)</option>
+                <option value="bf16" title="Bfloat16 precision">bf16 — Bfloat16</option>
+                <option value="f16" title="16-bit float (Full precision, standard memory)">f16 — 16-bit Float</option>
+                <option value="iq4_nl" title="Non-linear 4-bit quantized KV cache">iq4_nl — 4-bit Non-Linear Quantized</option>
+                <option value="q5_0" title="5-bit quantization for balanced memory">q5_0 — 5-bit Quantized</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>KV Cache Data Type (V)</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Quantization precision for Value tensors in the attention KV cache.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-ctv, --cache-type-v</span>
+              </label>
+              <select class="form-control font-mono" [(ngModel)]="state.config().server.cache_type_v">
+                <option value="auto" title="Default f16 (Omit from CLI)">Auto / Default f16 (Omit from CLI)</option>
+                <option value="q8_0" title="8-bit quantization: Saves 50% KV cache VRAM with zero loss in output quality">q8_0 — 8-bit Quantized (Save 50% VRAM)</option>
+                <option value="q4_0" title="4-bit quantization: Saves 75% KV cache VRAM for huge 32k-64k contexts">q4_0 — 4-bit Quantized (Save 75% VRAM)</option>
+                <option value="bf16" title="Bfloat16 precision">bf16 — Bfloat16</option>
+                <option value="f16" title="16-bit float (Full precision, standard memory)">f16 — 16-bit Float</option>
+                <option value="iq4_nl" title="Non-linear 4-bit quantized KV cache">iq4_nl — 4-bit Non-Linear Quantized</option>
+                <option value="q5_0" title="5-bit quantization for balanced memory">q5_0 — 5-bit Quantized</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Prompt Caching</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Caches prompt prefixes so repeated system prompts, file contents, and conversation histories evaluate instantly.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--cache-prompt</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.cache_prompt">
+                <option value="auto" title="Default: enabled in llama.cpp (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option [ngValue]="true" title="Reuses prefix tokens across turns for near-zero prompt evaluation latency">Enabled — Reuse prefix cache (--cache-prompt)</option>
+                <option [ngValue]="false" title="Evaluates all prompt tokens from scratch every request">Disabled — Re-evaluate every prompt (--no-cache-prompt)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Unified KV Buffer</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Shares a single unified dynamic KV buffer across all slots instead of static per-slot allocations.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-kvu, --kv-unified</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.kv_unified">
+                <option value="auto" title="Default: let llama.cpp allocate per slot (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option [ngValue]="true" title="Unified shared pool across all slots">Enabled — Unified shared KV pool (-kvu)</option>
+                <option [ngValue]="false" title="Separate static KV buffer per slot">Disabled — Dedicated slot buffers</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 6: Reasoning & Templates -->
+      @if (activeSubTab() === 'reasoning') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>Thinking Mode, Reasoning & Chat Templates</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Reasoning / Thinking Mode</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Enables reasoning traces (e.g. DeepSeek R1 / Qwen 2.5/3.8 Thinking) so the model outputs step-by-step thinking before final response.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-rea, --reasoning</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.reasoning_mode">
+                <option value="auto" title="Detects thinking capability automatically from model Jinja template (Omit from CLI)">Auto — Auto-detect (Omit from CLI)</option>
+                <option value="on" title="Enforces thinking and reasoning trace generation">On — Force Thinking Trace Enabled (--reasoning on)</option>
+                <option value="off" title="Disables thinking output; model outputs direct response immediately">Off — Direct Response (--reasoning off)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Reasoning Output Format</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Controls how thoughts are returned via API. 'deepseek' populates reasoning_content cleanly for OpenCode and chat UIs.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--reasoning-format</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.reasoning_format">
+                <option value="auto" title="Auto / Default (Omit from CLI)">Auto / Default (Omit from CLI)</option>
+                <option value="deepseek" title="Puts thinking trace into message.reasoning_content field (Recommended for OpenCode)">deepseek — Separate reasoning_content field (--reasoning-format deepseek)</option>
+                <option value="deepseek-legacy" title="Keeps <think> tags in message.content and also populates reasoning_content">deepseek-legacy — Keep &lt;think&gt; in content & reasoning</option>
+                <option value="none" title="Leaves raw <think> tags inside message.content without parsing">none — Unparsed raw text stream</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Reasoning Token Budget</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Token limit for thinking steps. -1 is unlimited; 0 forces immediate conclusion; N>0 caps thinking tokens.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--reasoning-budget</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().server.reasoning_budget" />
+              <div class="help-text">-1 = unrestricted budget, 0 = immediate end, N = max tokens.</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Preserve Reasoning in History</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Keeps reasoning traces in the full conversation history across multiple turns instead of only the last assistant turn.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--reasoning-preserve</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.reasoning_preserve">
+                <option [ngValue]="false" title="Strip older thinking traces to save context window">Disabled — Trim past thoughts</option>
+                <option [ngValue]="true" title="Preserve thoughts across all past turns">Enabled — Retain multi-turn reasoning</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label>
+                <span class="label-title">
+                  <span>Jinja Chat Template</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Jinja prompt template applied to structure user/assistant/system messages and special tokens.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--chat-template</span>
+              </label>
+              <select class="form-control" [(ngModel)]="state.config().server.chat_template">
+                @for (tpl of chatTemplates; track tpl.id) {
+                  <option [value]="tpl.id" [title]="tpl.desc">{{ tpl.name }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Custom Chat Template File</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Path to an external .jinja template file for custom fine-tunes or custom token formatting.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--chat-template-file</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().server.chat_template_file" placeholder="C:\path\to\template.jinja" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Jinja Template Kwargs (JSON)</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      JSON key-value parameters passed into the Jinja template renderer (e.g. enable_thinking).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--chat-template-kwargs</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().server.chat_template_kwargs" placeholder='{"enable_thinking": true}' />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 7: Sampling Defaults -->
+      @if (activeSubTab() === 'sampling') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <div>
+              <h4>Sampling &amp; Generation Defaults</h4>
+              <p class="pane-desc">All sampling parameters are optional. Leaving a field empty will omit its flag from the CLI command.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-secondary btn-sm" (click)="clearAllSamplingDefaults()" title="Clear all sampling fields to omit them from CLI command">🧹 Clear All (Omit Flags)</button>
+              <button class="btn btn-outline btn-sm" (click)="resetCodingSampling()" title="Set standard coding defaults (Temp: 0.2, Top-P: 0.95, Min-P: 0.05)">🎯 Coding Defaults</button>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Temperature</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Controls randomness. Lower values (0.1 - 0.5) are deterministic and ideal for coding; higher values (0.7 - 1.0) increase creativity.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--temp</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.temperature" step="0.05" min="0" max="2" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Top-K Sampling</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Limits token selection to the K highest probability tokens (default: 40, 0 = disabled).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--top-k</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.top_k" min="0" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Top-P Nucleus Sampling</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Selects from the smallest set of tokens whose cumulative probability exceeds P (default: 0.95, 1.0 = disabled).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--top-p</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.top_p" step="0.05" min="0" max="1" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Min-P Sampling</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Filters out tokens with probability below (Min-P * top token probability). Highly effective alternative to Top-P (default: 0.05).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--min-p</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.min_p" step="0.01" min="0" max="1" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Repeat Penalty</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Penalizes repetition of recently generated tokens (1.0 = no penalty, 1.05 - 1.10 = standard).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--repeat-penalty</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.repeat_penalty" step="0.05" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Repeat Last N Tokens</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Number of previous tokens to consider when applying the repetition penalty (default: 64).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--repeat-last-n</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.repeat_last_n" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>DRY Multiplier</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Don't Repeat Yourself (DRY) sampling multiplier to dynamically prevent repeated phrases and looping (default: 0.0 = disabled).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--dry-multiplier</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.dry_multiplier" step="0.1" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>DRY Base</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Exponential base factor for DRY penalty calculation (default: 1.75).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">--dry-base</span>
+              </label>
+              <input type="number" class="form-control font-mono" [(ngModel)]="state.config().sampling.dry_base" step="0.05" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 8: Speculative & Vision -->
+      @if (activeSubTab() === 'speculative') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>Speculative Decoding & Multimodal Vision</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Multimodal Projector (mmproj)</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Path to the multimodal vision/audio projector GGUF (e.g. for Qwen2-VL, Gemma-Vision, LLaVA).
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-mm, --mmproj</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().paths.mmproj_path" placeholder="C:\AI\Models\mmproj-model.gguf" />
+              <div class="help-text">Used for Vision / OCR models (e.g. Qwen-VL, Gemma-Vision).</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <span class="label-title">
+                  <span>Docker Hub Model Repo</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Docker Hub repository name to pull model weights from.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">-dr, --docker-repo</span>
+              </label>
+              <input type="text" class="form-control font-mono" [(ngModel)]="state.config().paths.docker_repo" placeholder="gemma3" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- TAB 9: Tools, MCP & Custom CLI Flags -->
+      @if (activeSubTab() === 'tools') {
+        <div class="tab-pane">
+          <div class="pane-header">
+            <h4>Built-in Agent Tools, MCP & Advanced Flags</h4>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>
+                <span class="label-title">
+                  <span>Advanced Custom CLI Flags</span>
+                  <span class="tooltip-trigger">
+                    ⓘ
+                    <span class="tooltip-popover">
+                      Enter any raw llama-server CLI flags separated by spaces. They are appended verbatim to the launch command.
+                    </span>
+                  </span>
+                </span>
+                <span class="flag-hint">Raw Arguments</span>
+              </label>
+              <textarea class="form-control font-mono" rows="4" [(ngModel)]="state.config().server.advanced" placeholder="--seed 42 --log-prefix --check-tensors"></textarea>
+              <div class="help-text">Enter any extra raw CLI flags separated by space. They will be appended directly to the llama-server launch command.</div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

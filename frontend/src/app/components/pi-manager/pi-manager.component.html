@@ -1,0 +1,234 @@
+<div class="pi-manager-container">
+  <div class="pi-layout-grid">
+    <!-- Left Column: New Project Creator Wizard -->
+    <div class="card wizard-card">
+      <div class="card-header">
+        <div class="title-wrap">
+          <div>
+            <h3>New Pi Agent Project</h3>
+            <p class="subtitle">Create folder, scaffold starter files & generate <code>.pi/models.json</code></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <span class="label-title">
+            <span>Project Name / Folder</span>
+            <span class="tooltip-trigger">
+              ⓘ
+              <span class="tooltip-popover">
+                The name of the new directory that will be created to host your project and .pi/ configuration.
+              </span>
+            </span>
+          </span>
+        </label>
+        <input type="text" class="form-control font-mono" [(ngModel)]="newProjectName" placeholder="my-pi-service" />
+      </div>
+
+      <div class="form-group">
+        <label>
+          <span class="label-title">
+            <span>Base Workspace Directory</span>
+            <span class="tooltip-trigger">
+              ⓘ
+              <span class="tooltip-popover">
+                Parent directory where project folders are stored (default: C:\AI\Projects).
+              </span>
+            </span>
+          </span>
+        </label>
+        <input type="text" class="form-control font-mono" [(ngModel)]="baseDir" placeholder="C:\AI\Projects" />
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>
+            <span class="label-title">
+              <span>Context Window</span>
+              <span class="tooltip-trigger">
+                ⓘ
+                <span class="tooltip-popover">
+                  Context window limit written to .pi/models.json (e.g. 32768 or 65536).
+                </span>
+              </span>
+            </span>
+          </label>
+          <input type="number" class="form-control font-mono" [(ngModel)]="customContextLimit" step="4096" />
+        </div>
+        <div class="form-group">
+          <label>
+            <span class="label-title">
+              <span>Output Token Limit</span>
+              <span class="tooltip-trigger">
+                ⓘ
+                <span class="tooltip-popover">
+                  Maximum generation token limit written to .pi/models.json (default: 8192).
+                </span>
+              </span>
+            </span>
+          </label>
+          <input type="number" class="form-control font-mono" [(ngModel)]="customOutputLimit" step="1024" />
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>
+            <span class="label-title">
+              <span>Thinking Level</span>
+              <span class="tooltip-trigger">
+                ⓘ
+                <span class="tooltip-popover">
+                  Default thinking level passed to Pi Coding Agent in settings.json (high, medium, low, off).
+                </span>
+              </span>
+            </span>
+          </label>
+          <select class="form-control" [(ngModel)]="thinkingLevel">
+            <option value="high">high - Full Deep Thinking</option>
+            <option value="medium">medium - Moderate Thinking</option>
+            <option value="low">low - Brief Thinking</option>
+            <option value="off">off - Direct Generation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>
+            <span class="label-title">
+              <span>Starter Template</span>
+              <span class="tooltip-trigger">
+                ⓘ
+                <span class="tooltip-popover">
+                  Initial starter code file to scaffold inside your new project folder.
+                </span>
+              </span>
+            </span>
+          </label>
+          <select class="form-control" [(ngModel)]="sampleType">
+            <option value="java" title="Creates Main.java with hello world">Java (Main.java)</option>
+            <option value="node" title="Creates index.js with basic starter script">Node.js (index.js)</option>
+            <option value="none" title="Creates empty directory with .pi configuration only">Empty Directory</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <span class="label-title">
+            <span>Preferred Terminal</span>
+            <span class="tooltip-trigger">
+              ⓘ
+              <span class="tooltip-popover">
+                Terminal emulator launched when you click 'Start Pi Terminal'. Windows Terminal (wt) is recommended.
+              </span>
+            </span>
+          </span>
+        </label>
+        <select class="form-control" [(ngModel)]="terminalType">
+          <option value="wt" title="Modern Windows Terminal (Tabs, GPU rendering, dark theme)">Windows Terminal (wt.exe)</option>
+          <option value="powershell" title="Standard Windows PowerShell window">PowerShell (powershell.exe)</option>
+          <option value="cmd" title="Classic Windows Command Prompt">Command Prompt (cmd.exe)</option>
+        </select>
+      </div>
+
+      <div class="wizard-actions">
+        <button class="btn btn-primary" [disabled]="isCreating()" (click)="createProject()">
+          @if (isCreating()) {
+            <span class="spinner"></span> Creating...
+          } @else {
+            Create Pi Project
+          }
+        </button>
+      </div>
+
+      <!-- Live Generated .pi/models.json Preview -->
+      <div class="config-preview-section">
+        <div class="section-title">
+          <span>Generated <code>.pi/models.json</code> Preview:</span>
+        </div>
+        <pre class="json-preview font-mono"><code>{{ generatedPiModelsJsonString }}</code></pre>
+      </div>
+    </div>
+
+    <!-- Right Column: Existing Projects Explorer -->
+    <div class="card projects-card">
+      <div class="card-header">
+        <div class="title-wrap">
+          <div>
+            <h3>Workspace Projects</h3>
+            <p class="subtitle">Projects detected in <code>{{ baseDir }}</code></p>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" (click)="state.refreshProjects()" title="Scan for new project directories">
+          Refresh
+        </button>
+      </div>
+
+      <div class="projects-list">
+        @if (state.projects().length === 0) {
+          <div class="empty-state">
+            <h4>No Projects Found</h4>
+            <p>Use the wizard on the left to create your first Pi agent project.</p>
+          </div>
+        } @else {
+          @for (proj of state.projects(); track proj.path) {
+            <div class="project-item">
+              <div class="project-info">
+                <div class="project-title-row">
+                  <span class="project-name font-mono">{{ proj.name }}</span>
+                  @if (proj.hasPiConfig) {
+                    <span class="badge badge-success">Pi Configured</span>
+                  } @else {
+                    <span class="badge badge-warning">No .pi config</span>
+                  }
+                </div>
+                <span class="project-path font-mono">{{ proj.path }}</span>
+              </div>
+
+              <div class="project-actions">
+                <button class="btn btn-success btn-sm font-mono" (click)="startPi(proj)" title="Launch interactive Pi terminal in this folder">
+                  Start Pi
+                </button>
+                <button class="btn btn-secondary btn-sm font-mono" [disabled]="isInjecting() === proj.path" (click)="syncPiConfig(proj)" title="Sync .pi/models.json with active Llama Server">
+                  @if (isInjecting() === proj.path) {
+                    <span class="spinner"></span> Syncing...
+                  } @else {
+                    Sync Llama
+                  }
+                </button>
+                <button class="btn btn-outline btn-sm font-mono" (click)="openVsCode(proj)" title="Open in Visual Studio Code">
+                  VS Code
+                </button>
+                <button class="btn btn-outline btn-sm font-mono" (click)="openExplorer(proj)" title="Open in Windows Explorer">
+                  Explorer
+                </button>
+                <button class="btn btn-outline btn-sm font-mono" (click)="openConfigEditor(proj)" title="View/Edit .pi/models.json">
+                  Edit JSON
+                </button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Config JSON Editor -->
+  @if (selectedProjectForEdit()) {
+    <div class="modal-overlay" (click)="closeConfigEditor()">
+      <div class="modal-card card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h4>Edit <code>.pi/models.json</code> &bull; {{ selectedProjectForEdit()?.name }}</h4>
+          <button class="close-btn" (click)="closeConfigEditor()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <textarea class="form-control font-mono json-editor" rows="14" [(ngModel)]="editedConfigJson"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeConfigEditor()">Cancel</button>
+          <button class="btn btn-primary" (click)="saveEditedConfig()">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

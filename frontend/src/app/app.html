@@ -1,0 +1,25 @@
+<div class="app-layout">
+  <!-- Top Navigation & Control Header -->
+  <app-header></app-header>
+
+  <!-- Main View Router / Tab Switcher -->
+  <main class="app-main-content">
+    @switch (state.activeTab()) {
+      @case ('config') {
+        <app-llama-config></app-llama-config>
+      }
+      @case ('pi') {
+        <app-pi-manager></app-pi-manager>
+      }
+      @case ('opencode') {
+        <app-pi-manager></app-pi-manager>
+      }
+      @case ('logs') {
+        <app-logs-viewer></app-logs-viewer>
+      }
+      @case ('chat') {
+        <app-chat-playground></app-chat-playground>
+      }
+    }
+  </main>
+</div>

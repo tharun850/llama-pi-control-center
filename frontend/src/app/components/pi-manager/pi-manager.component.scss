@@ -1,0 +1,257 @@
+.pi-manager-container {
+  padding-bottom: 2rem;
+}
+
+.pi-layout-grid {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 1.5rem;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wizard-card, .projects-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+
+  .title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+
+    .header-icon {
+      font-size: 1.75rem;
+    }
+
+    h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+    }
+
+    .subtitle {
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      margin: 0.15rem 0 0;
+
+      code {
+        color: var(--accent-cyan);
+        background: rgba(6, 182, 212, 0.1);
+        padding: 0.1rem 0.35rem;
+        border-radius: 4px;
+      }
+    }
+  }
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.wizard-actions {
+  margin-top: 0.75rem;
+
+  button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem;
+    font-weight: 600;
+  }
+}
+
+.config-preview-section {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
+
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+
+    code {
+      color: var(--accent-cyan);
+    }
+  }
+
+  .json-preview {
+    background: #090e17;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    max-height: 200px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+}
+
+/* Projects Explorer */
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  overflow-y: auto;
+  max-height: 680px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--text-muted);
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    opacity: 0.5;
+  }
+
+  h4 {
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+}
+
+.project-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .project-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+
+    .project-title-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .folder-icon {
+        font-size: 1.1rem;
+      }
+
+      .project-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #ffffff;
+      }
+    }
+
+    .project-path {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .project-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 700px;
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-lg);
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin: 0;
+
+      code {
+        color: var(--accent-cyan);
+      }
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+
+      &:hover {
+        color: #ffffff;
+      }
+    }
+  }
+
+  .modal-body {
+    margin-bottom: 1.25rem;
+
+    .json-editor {
+      background: #090e17;
+      font-size: 0.8rem;
+      line-height: 1.5;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+  }
+}

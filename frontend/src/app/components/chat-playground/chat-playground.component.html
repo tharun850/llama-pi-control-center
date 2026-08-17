@@ -1,0 +1,80 @@
+<div class="chat-playground-container">
+  <!-- Top Settings Bar -->
+  <div class="chat-header-card card">
+    <div class="header-left">
+      <div class="model-info">
+        <span class="active-dot" [class.running]="state.serverStatus().running"></span>
+        <span class="model-label">Connected Model:</span>
+        <span class="model-name font-mono">{{ state.config().server.alias }}</span>
+        <span class="endpoint-badge font-mono">http://{{ state.config().server.host }}:{{ state.config().server.port }}/v1</span>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div class="control-item">
+        <label>Temperature</label>
+        <input type="number" class="form-control btn-sm font-mono" [(ngModel)]="temperature" step="0.1" min="0" max="2" />
+      </div>
+      <div class="control-item">
+        <label>Max Tokens</label>
+        <input type="number" class="form-control btn-sm font-mono" [(ngModel)]="maxTokens" step="256" min="64" />
+      </div>
+      <button class="btn btn-secondary btn-sm" (click)="clearChat()">Clear</button>
+    </div>
+  </div>
+
+  <!-- Messages List -->
+  <div class="messages-scroll-area">
+    @for (msg of messages(); track msg.timestamp) {
+      <div class="message-card" [class.user-message]="msg.role === 'user'" [class.assistant-message]="msg.role === 'assistant'">
+        <div class="message-header">
+          <span class="sender-name">{{ msg.role === 'user' ? 'User' : 'Assistant' }}</span>
+          @if (msg.elapsedMs) {
+            <span class="latency-badge font-mono">{{ msg.elapsedMs }} ms</span>
+          }
+        </div>
+
+        @if (msg.reasoning_content) {
+          <details class="reasoning-box">
+            <summary class="reasoning-summary">
+              Reasoning Trace (Click to Expand)
+            </summary>
+            <div class="reasoning-body font-mono">
+              {{ msg.reasoning_content }}
+            </div>
+          </details>
+        }
+
+        <div class="message-body">
+          <pre class="message-text font-sans">{{ msg.content }}</pre>
+        </div>
+      </div>
+    }
+
+    @if (isLoading()) {
+      <div class="message-card assistant-message generating">
+        <div class="message-header">
+          <span class="sender-name">Assistant</span>
+          <span class="generating-badge">Generating response...</span>
+        </div>
+        <div class="thinking-spinner">
+          <span class="spinner"></span> Streaming tokens from local Llama server...
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Prompt Input Bar -->
+  <div class="input-container card">
+    <textarea
+      class="form-control prompt-textarea"
+      rows="2"
+      placeholder="Type a prompt to test your model (Press Enter to Send, Shift+Enter for newline)..."
+      [(ngModel)]="promptText"
+      (keydown)="onKeyDown($any($event))"
+    ></textarea>
+    <button class="btn btn-primary send-btn" [disabled]="isLoading() || !promptText().trim()" (click)="sendPrompt()">
+      Send Prompt
+    </button>
+  </div>
+</div>

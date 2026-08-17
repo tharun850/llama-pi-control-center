@@ -1,0 +1,206 @@
+<header class="app-header">
+  <div class="header-main">
+    <!-- Brand / App Info -->
+    <div class="brand-section">
+      <div class="logo-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="20" height="14" x="2" y="3" rx="2"/>
+          <line x1="8" x2="16" y1="21" y2="21"/>
+          <line x1="12" x2="12" y1="17" y2="21"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Llama Server &amp; Pi</h1>
+        <span class="version-tag">Control Center &bull; Angular 21 Zoneless</span>
+      </div>
+    </div>
+
+    <!-- Server & Backend Status & Metrics Bar -->
+    <div class="status-summary">
+      <!-- Backend Status Indicator -->
+      <div class="status-pill backend-pill">
+        @if (state.backendConnected()) {
+          <span class="badge badge-success" title="Java Backend is actively running on port 8765">
+            <span class="dot"></span>
+            JAVA BACKEND: ONLINE
+          </span>
+          <button class="btn btn-outline-danger btn-xs" (click)="onStopBackendClick()" title="Stop and shutdown the Java Backend server process">
+            Stop Backend
+          </button>
+        } @else {
+          <span class="badge badge-danger" title="Java Backend is offline. Start it with start.bat or java BackendServer.java">
+            <span class="dot"></span>
+            JAVA BACKEND: OFFLINE
+          </span>
+        }
+      </div>
+
+      <!-- Llama Server Process Status -->
+      <div class="status-pill">
+        @if (state.serverStatus().running && state.serverStatus().healthy) {
+          <span class="badge badge-success pulse">
+            <span class="dot"></span>
+            LLAMA: RUNNING
+          </span>
+        } @else if (state.serverStatus().running && !state.serverStatus().healthy) {
+          <span class="badge badge-warning">
+            <span class="dot"></span>
+            LLAMA: LOADING...
+          </span>
+        } @else {
+          <span class="badge badge-stopped">
+            <span class="dot"></span>
+            LLAMA: STOPPED
+          </span>
+        }
+
+        <div class="meta-item">
+          <span class="meta-label">PORT</span>
+          <span class="meta-value font-mono">{{ state.config().server.port }}</span>
+        </div>
+
+        @if (state.serverStatus().pid) {
+          <div class="meta-item">
+            <span class="meta-label">PID</span>
+            <span class="meta-value font-mono">{{ state.serverStatus().pid }}</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">UPTIME</span>
+            <span class="meta-value font-mono">{{ formatUptime(state.serverStatus().uptimeSeconds) }}</span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Server Control Actions -->
+    <div class="control-actions">
+      <!-- Quick Presets Dropdown -->
+      <div class="preset-selector" title="Choose a pre-tuned configuration profile">
+        <select class="form-control btn-sm font-sans" (change)="onPresetChange($event)">
+          <option value="" disabled selected>Load Preset...</option>
+          @for (preset of state.presets(); track preset.id) {
+            <option [value]="preset.id" [title]="preset.description">{{ preset.name }}</option>
+          }
+        </select>
+      </div>
+
+      @if (!state.serverStatus().running) {
+        <button class="btn btn-success" [disabled]="state.isStarting() || !state.backendConnected()" (click)="state.startServer()">
+          @if (state.isStarting()) {
+            <span class="spinner"></span> Starting...
+          } @else {
+            Start Llama Server
+          }
+        </button>
+      } @else {
+        <button class="btn btn-secondary btn-sm" [disabled]="state.isStarting()" (click)="state.restartServer()" title="Restart Server">
+          Restart
+        </button>
+        <button class="btn btn-danger" [disabled]="state.isStopping()" (click)="state.stopServer()">
+          @if (state.isStopping()) {
+            <span class="spinner"></span> Stopping...
+          } @else {
+            Stop Llama
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="nav-tab" [class.active]="state.activeTab() === 'config'" (click)="state.activeTab.set('config')">
+      Server Configuration
+    </button>
+    <button class="nav-tab" [class.active]="state.activeTab() === 'pi' || state.activeTab() === 'opencode'" (click)="state.activeTab.set('pi')">
+      Pi Projects &amp; Terminal
+      @if (state.projects().length > 0) {
+        <span class="tab-badge">{{ state.projects().length }}</span>
+      }
+    </button>
+    <button class="nav-tab" [class.active]="state.activeTab() === 'logs'" (click)="state.activeTab.set('logs')">
+      Live Logs
+      @if (state.logs().length > 0) {
+        <span class="tab-badge pulse-subtle">{{ state.logs().length }}</span>
+      }
+    </button>
+    <button class="nav-tab" [class.active]="state.activeTab() === 'chat'" (click)="state.activeTab.set('chat')">
+      Chat &amp; API Playground
+    </button>
+  </nav>
+
+  @if (!state.backendConnected()) {
+    <div class="notification-bar notify-error">
+      <span><strong>Backend Offline:</strong> Cannot connect to Java backend on <code>http://127.0.0.1:8765</code>. Please ensure the backend is running (run <code>start.bat</code> or <code>java backend/BackendServer.java</code>).</span>
+    </div>
+  }
+
+  @if (state.notification()) {
+    <div class="notification-bar" [class.notify-success]="state.notification()?.type === 'success'" [class.notify-error]="state.notification()?.type === 'error'" [class.notify-info]="state.notification()?.type === 'info'">
+      <span>{{ state.notification()?.message }}</span>
+      <button class="close-notify" (click)="state.notification.set(null)">&times;</button>
+    </div>
+  }
+
+  <!-- Shutdown Confirmation Modal -->
+  @if (showShutdownModal()) {
+    <div class="modal-overlay" (click)="closeShutdownModal()">
+      <div class="modal-card card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div>
+              <h4>Llama Server is Currently Running</h4>
+              <p class="modal-subtitle">PID: <code>{{ state.serverStatus().pid }}</code> &bull; Model: <code>{{ state.config().server.alias }}</code> (Port {{ state.config().server.port }})</p>
+            </div>
+          </div>
+          <button class="close-btn" (click)="closeShutdownModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <p class="modal-desc">
+            The Llama Server is actively loaded in GPU/CPU memory and serving inference requests. Choose how you would like to proceed:
+          </p>
+
+          <div class="shutdown-choice-cards">
+            <!-- Choice 1: Stop Both -->
+            <div class="choice-card choice-stop-both">
+              <div class="choice-content">
+                <div class="choice-text">
+                  <h5>Stop Both (Recommended)</h5>
+                  <p>Terminate the Llama Server process cleanly and shut down the Java Backend.</p>
+                </div>
+              </div>
+              <button class="btn btn-danger btn-sm" (click)="confirmShutdown(false)">Stop All &amp; Exit</button>
+            </div>
+
+            <!-- Choice 2: Keep Llama Running -->
+            <div class="choice-card choice-keep-llama">
+              <div class="choice-content">
+                <div class="choice-text">
+                  <h5>Keep Llama Server Running in Background</h5>
+                  <p>Detach Llama Server to continue serving inference and Pi requests, and shut down only the Java Backend.</p>
+                </div>
+              </div>
+
+              <div class="cli-command-box">
+                <div class="cli-label">
+                  <span>To stop Llama later from command line, run:</span>
+                  <button class="btn btn-secondary btn-xs font-mono" (click)="copyKillCommand()">
+                    {{ copiedCommand() ? 'Copied' : 'Copy' }}
+                  </button>
+                </div>
+                <pre class="cli-snippet font-mono"><code>{{ llamaKillCommand }}</code></pre>
+              </div>
+
+              <button class="btn btn-warning btn-sm" (click)="confirmShutdown(true)">Keep Llama &amp; Stop Backend</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline" (click)="closeShutdownModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  }
+</header>
